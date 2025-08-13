@@ -9,21 +9,21 @@ import java.util.concurrent.ConcurrentHashMap;
 import java.util.function.Supplier;
 
 public class ApplicationContext {
-
+    
     // 싱글톤 저장소
     private final Map<String, Object> singletons = new ConcurrentHashMap<>();
     // 빈 공급자 레지스트리
     private final Map<String, Supplier<?>> providers = new ConcurrentHashMap<>();
 
-    public ApplicationContext() {
-        // 1) 리포지토리
+    public ApplicationContext() { // 생성자에서 제조법을 미리 넣어놓기
+        // 1) Repository
         providers.put("testPostRepository", TestPostRepository::new);
 
-        // 2) 서비스
+        // 2) Service
         providers.put("testPostService", () ->
                 new TestPostService(getBean("testPostRepository", TestPostRepository.class)));
 
-        // 3) 퍼사드 서비스
+        // 3) FacadeService
         providers.put("testFacadePostService", () ->
                 new TestFacadePostService(
                         getBean("testPostService", TestPostService.class),
@@ -32,7 +32,7 @@ public class ApplicationContext {
     }
 
     @SuppressWarnings("unchecked")
-    public <T> T genBean(String beanName) {
+    public <T> T genBean(String beanName) { // genBean을 통해 외부에서 실제 Bean을 생성함.
         // 미등록이면 즉시 명확한 예외
         Supplier<?> supplier = providers.get(beanName);
         if (supplier == null) {
@@ -50,7 +50,7 @@ public class ApplicationContext {
     }
 
     // 타입 세이프 헬퍼 (레지스트리 내부에서 사용)
-    private <T> T getBean(String name, Class<T> type) {
+    private <T> T getBean(String name, Class<T> type) { // 내부에서만 사용하는 메서드
         Object o = genBean(name);
         if (!type.isInstance(o)) {
             throw new IllegalStateException("빈 타입 불일치: " + name + " -> " + o.getClass().getName()
